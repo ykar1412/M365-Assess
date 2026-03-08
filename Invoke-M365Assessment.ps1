@@ -1217,8 +1217,11 @@ foreach ($sectionName in $Section) {
                 if ($CertificateThumbprint) { $collectorParams['CertificateThumbprint'] = $CertificateThumbprint }
             }
 
-            # Capture warnings (3>&1) so they go to log instead of console
-            $rawOutput = & $scriptPath @collectorParams 3>&1
+            # Capture warnings (3>&1) so they go to log instead of console.
+            # Suppress error stream (2>$null) to prevent Graph SDK cmdlets from
+            # dumping raw API errors to console; terminating errors still propagate
+            # to the catch block below via the exception mechanism.
+            $rawOutput = & $scriptPath @collectorParams 3>&1 2>$null
             $capturedWarnings = @($rawOutput | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
             $results = @($rawOutput | Where-Object { $null -ne $_ -and $_ -isnot [System.Management.Automation.WarningRecord] })
 

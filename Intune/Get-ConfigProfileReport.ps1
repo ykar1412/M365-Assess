@@ -76,10 +76,10 @@ $platformMap = @{
 Write-Verbose "Retrieving all Intune device configuration profiles..."
 
 try {
-    $profiles = Get-MgDeviceManagementDeviceConfiguration -All
+    $profiles = Get-MgDeviceManagementDeviceConfiguration -All -ErrorAction Stop
 }
 catch {
-    Write-Error "Failed to retrieve configuration profiles from Intune: $_"
+    Write-Warning "Could not retrieve Intune configuration profiles. Ensure Intune is licensed and permissions are granted: $($_.Exception.Message)"
     return
 }
 

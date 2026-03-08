@@ -55,10 +55,10 @@ Import-Module -Name Microsoft.Graph.DeviceManagement -ErrorAction Stop
 Write-Verbose "Retrieving all Intune managed devices..."
 
 try {
-    $devices = Get-MgDeviceManagementManagedDevice -All
+    $devices = Get-MgDeviceManagementManagedDevice -All -ErrorAction Stop
 }
 catch {
-    Write-Error "Failed to retrieve managed devices from Intune: $_"
+    Write-Warning "Could not retrieve Intune managed devices. Ensure Intune is licensed and permissions are granted: $($_.Exception.Message)"
     return
 }
 

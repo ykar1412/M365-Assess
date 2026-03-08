@@ -68,10 +68,10 @@ $platformMap = @{
 Write-Verbose "Retrieving all Intune device compliance policies..."
 
 try {
-    $policies = Get-MgDeviceManagementDeviceCompliancePolicy -All
+    $policies = Get-MgDeviceManagementDeviceCompliancePolicy -All -ErrorAction Stop
 }
 catch {
-    Write-Error "Failed to retrieve compliance policies from Intune: $_"
+    Write-Warning "Could not retrieve Intune compliance policies. Ensure Intune is licensed and permissions are granted: $($_.Exception.Message)"
     return
 }
 

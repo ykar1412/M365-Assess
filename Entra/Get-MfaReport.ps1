@@ -52,10 +52,10 @@ Import-Module -Name Microsoft.Graph.Reports -ErrorAction Stop
 # Retrieve MFA registration details
 try {
     Write-Verbose "Retrieving authentication method registration details..."
-    $registrationDetails = Get-MgReportAuthenticationMethodUserRegistrationDetail -All
+    $registrationDetails = Get-MgReportAuthenticationMethodUserRegistrationDetail -All -ErrorAction Stop
 }
 catch {
-    Write-Error "Failed to retrieve MFA registration details: $_"
+    Write-Warning "Could not retrieve MFA registration details (requires Azure AD Premium P1/P2): $($_.Exception.Message)"
     return
 }
 
