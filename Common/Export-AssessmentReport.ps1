@@ -582,18 +582,85 @@ foreach ($sectionName in $sections) {
         }
 
         # ----------------------------------------------------------
-        # DNS Authentication — advisory cards + resource links
+        # Mailbox Summary — infrastructure cards (no table)
+        # ----------------------------------------------------------
+        if ($c.FileName -eq '09-Mailbox-Summary.csv') {
+            $null = $sectionHtml.AppendLine("<div class='exec-summary'>")
+            foreach ($row in $data) {
+                if ($row.Count -eq 'N/A') { continue }
+                $metricLabel = Format-ColumnHeader -Name $row.Metric
+                $null = $sectionHtml.AppendLine("<div class='stat-card info'><div class='stat-value'>$($row.Count)</div><div class='stat-label'>$(ConvertTo-HtmlSafe -Text $metricLabel)</div></div>")
+            }
+            $null = $sectionHtml.AppendLine("</div>")
+            continue
+        }
+
+        # ----------------------------------------------------------
+        # EXO Security Config — pass/fail summary cards above CIS table
+        # ----------------------------------------------------------
+        if ($c.FileName -eq '11b-EXO-Security-Config.csv') {
+            $exoTotal = @($data).Count
+            $exoPass = @($data | Where-Object { $_.Status -eq 'Pass' }).Count
+            $exoFail = @($data | Where-Object { $_.Status -eq 'Fail' }).Count
+            $exoWarn = @($data | Where-Object { $_.Status -eq 'Warning' }).Count
+            $exoReview = @($data | Where-Object { $_.Status -eq 'Review' }).Count
+
+            $null = $sectionHtml.AppendLine("<div class='exec-summary'>")
+            $null = $sectionHtml.AppendLine("<div class='stat-card info'><div class='stat-value'>$exoTotal</div><div class='stat-label'>EXO Controls</div></div>")
+            $null = $sectionHtml.AppendLine("<div class='stat-card success'><div class='stat-value'>$exoPass</div><div class='stat-label'>Pass</div></div>")
+            if ($exoFail -gt 0) {
+                $null = $sectionHtml.AppendLine("<div class='stat-card error'><div class='stat-value'>$exoFail</div><div class='stat-label'>Fail</div></div>")
+            }
+            if ($exoWarn -gt 0) {
+                $null = $sectionHtml.AppendLine("<div class='stat-card warning'><div class='stat-value'>$exoWarn</div><div class='stat-label'>Warning</div></div>")
+            }
+            if ($exoReview -gt 0) {
+                $null = $sectionHtml.AppendLine("<div class='stat-card' style='border-top-color: var(--m365a-accent);'><div class='stat-value'>$exoReview</div><div class='stat-label'>Review</div></div>")
+            }
+            $null = $sectionHtml.AppendLine("</div>")
+            # Don't continue — let the CIS table render below
+        }
+
+        # ----------------------------------------------------------
+        # Email Policies — policy status cards above detail table
+        # ----------------------------------------------------------
+        if ($c.FileName -eq '11-Email-Security.csv') {
+            $null = $sectionHtml.AppendLine("<div class='exec-summary'>")
+            foreach ($policy in $data) {
+                $policyEnabled = ($policy.Enabled -eq 'True')
+                $policyColor = if ($policyEnabled) { '#2ecc71' } else { '#e74c3c' }
+                $policyIcon = if ($policyEnabled) { 'Enabled' } else { 'Disabled' }
+                $policyLabel = ConvertTo-HtmlSafe -Text $policy.PolicyType
+                $policyDetail = ConvertTo-HtmlSafe -Text $policy.Name
+                $null = $sectionHtml.AppendLine("<div class='stat-card' style='border-top-color: $policyColor;'><div class='stat-value' style='color: $policyColor; font-size: 18pt;'>$policyIcon</div><div class='stat-label'>$policyLabel</div><div class='stat-detail'>$policyDetail</div></div>")
+            }
+            $null = $sectionHtml.AppendLine("</div>")
+            # Don't continue — let detail table render below
+        }
+
+        # ----------------------------------------------------------
+        # DNS Authentication — protocol context + advisory cards + table
         # ----------------------------------------------------------
         if ($c.FileName -eq '12-DNS-Authentication.csv') {
+            # Protocol explanation — positioned right where it's relevant
+            $null = $sectionHtml.AppendLine("<div class='section-advisory'>")
+            $null = $sectionHtml.AppendLine("<strong>Email Authentication Protocols</strong>")
+            $null = $sectionHtml.AppendLine("<p><strong>SPF</strong> (Sender Policy Framework) specifies which mail servers are authorized to send email on behalf of your domain. Without SPF, attackers can send emails that appear to come from your domain with no way for recipients to detect the forgery.</p>")
+            $null = $sectionHtml.AppendLine("<p><strong>DKIM</strong> (DomainKeys Identified Mail) adds a cryptographic signature to outgoing messages, proving they haven't been tampered with in transit. DKIM protects message integrity and is essential for DMARC alignment.</p>")
+            $null = $sectionHtml.AppendLine("<p><strong>DMARC</strong> (Domain-based Message Authentication, Reporting &amp; Conformance) ties SPF and DKIM together with a policy that tells receiving servers what to do with messages that fail authentication &mdash; monitor (<code>p=none</code>), quarantine, or reject. DMARC at <code>p=reject</code> is the gold standard and is required by <a href='https://www.cisa.gov/news-events/directives/bod-18-01-enhance-email-and-web-security' target='_blank'>CISA BOD 18-01</a> for federal agencies.</p>")
+            $null = $sectionHtml.AppendLine("<p><strong>MTA-STS</strong> (RFC 8461) enforces TLS encryption for inbound email transport, preventing man-in-the-middle downgrade attacks. <strong>TLS-RPT</strong> (RFC 8460) provides daily reports on TLS delivery failures so you know when encrypted delivery is failing.</p>")
+            $null = $sectionHtml.AppendLine("<p>This assessment queries both local and public DNS servers (Google 8.8.8.8, Cloudflare 1.1.1.1) to confirm records are live. SPF records are validated against the RFC 7208 10-DNS-lookup limit, and duplicate records that would cause PermError are flagged.</p>")
+            $null = $sectionHtml.AppendLine("<p class='advisory-links'><strong>Official Resources:</strong> <a href='https://learn.microsoft.com/en-us/defender-office-365/email-authentication-about' target='_blank'>Microsoft Email Authentication</a> &middot; <a href='https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dmarc-configure' target='_blank'>Configure DMARC</a> &middot; <a href='https://learn.microsoft.com/en-us/purview/enhancing-mail-flow-with-mta-sts' target='_blank'>MTA-STS for Exchange Online</a> &middot; <a href='https://csrc.nist.gov/pubs/sp/800/177/r1/final' target='_blank'>NIST SP 800-177</a> &middot; <a href='https://www.cisa.gov/news-events/directives/bod-18-01-enhance-email-and-web-security' target='_blank'>CISA BOD 18-01</a></p>")
+            $null = $sectionHtml.AppendLine("</div>")
+
+            # Summary cards
             $dnsData = @($data)
             $totalDomains = $dnsData.Count
             $dnsColumns = @($dnsData[0].PSObject.Properties.Name)
 
-            # SPF stats
             $spfConfigured = @($dnsData | Where-Object { $_.SPF -and $_.SPF -ne 'Not configured' -and $_.SPF -ne 'DNS lookup failed' }).Count
             $spfColor = if ($spfConfigured -eq $totalDomains) { '#2ecc71' } else { '#e74c3c' }
 
-            # DMARC stats
             $dmarcConfigured = @($dnsData | Where-Object { $_.DMARC -and $_.DMARC -ne 'Not configured' }).Count
             $dmarcEnforced = 0
             $dmarcMonitoring = 0
@@ -603,26 +670,22 @@ foreach ($sectionName in $sections) {
             }
             $dmarcColor = if ($dmarcEnforced -eq $totalDomains) { '#2ecc71' } elseif ($dmarcConfigured -gt 0) { '#f39c12' } else { '#e74c3c' }
 
-            # DKIM stats
             $dkimKey = if ($dnsColumns -contains 'DKIMSelector1') { 'DKIMSelector1' } else { 'DKIMSelector' }
             $dkimConfigured = @($dnsData | Where-Object { $_.$dkimKey -and $_.$dkimKey -ne 'Not configured' }).Count
             $dkimColor = if ($dkimConfigured -eq $totalDomains) { '#2ecc71' } elseif ($dkimConfigured -gt 0) { '#f39c12' } else { '#e74c3c' }
 
-            # MTA-STS stats (new column — may not exist in older data)
             $mtaStsConfigured = 0
             if ($dnsColumns -contains 'MTASTS') {
                 $mtaStsConfigured = @($dnsData | Where-Object { $_.MTASTS -and $_.MTASTS -ne 'Not configured' }).Count
             }
             $mtaStsColor = if ($mtaStsConfigured -eq $totalDomains) { '#2ecc71' } elseif ($mtaStsConfigured -gt 0) { '#f39c12' } else { '#e74c3c' }
 
-            # TLS-RPT stats
             $tlsRptConfigured = 0
             if ($dnsColumns -contains 'TLSRPT') {
                 $tlsRptConfigured = @($dnsData | Where-Object { $_.TLSRPT -and $_.TLSRPT -ne 'Not configured' }).Count
             }
             $tlsRptColor = if ($tlsRptConfigured -eq $totalDomains) { '#2ecc71' } elseif ($tlsRptConfigured -gt 0) { '#f39c12' } else { '#e74c3c' }
 
-            # Public DNS confirmation
             $publicConfirmed = 0
             if ($dnsColumns -contains 'PublicDNSConfirm') {
                 $publicConfirmed = @($dnsData | Where-Object { $_.PublicDNSConfirm -match '^Confirmed' }).Count
@@ -639,13 +702,7 @@ foreach ($sectionName in $sections) {
                 $null = $sectionHtml.AppendLine("<div class='stat-card' style='border-top-color: $publicColor;'><div class='stat-value' style='color: $publicColor;'>$publicConfirmed / $totalDomains</div><div class='stat-label'>Public DNS</div><div class='stat-detail'>Confirmed live</div></div>")
             }
             $null = $sectionHtml.AppendLine("</div>")
-
-            # Advisory block with resource links
-            $null = $sectionHtml.AppendLine("<div class='section-advisory'>")
-            $null = $sectionHtml.AppendLine("<strong>DNS Email Authentication Assessment</strong>")
-            $null = $sectionHtml.AppendLine("<p>This assessment queries both local and public DNS servers (Google 8.8.8.8, Cloudflare 1.1.1.1) to confirm your email authentication records are live and properly configured. SPF records are validated against the RFC 7208 10-DNS-lookup limit, and duplicate records that would cause PermError are flagged.</p>")
-            $null = $sectionHtml.AppendLine("<p class='advisory-links'><strong>Standards:</strong> <a href='https://datatracker.ietf.org/doc/html/rfc7208' target='_blank'>SPF (RFC 7208)</a> &middot; <a href='https://datatracker.ietf.org/doc/html/rfc6376' target='_blank'>DKIM (RFC 6376)</a> &middot; <a href='https://datatracker.ietf.org/doc/html/rfc7489' target='_blank'>DMARC (RFC 7489)</a> &middot; <a href='https://datatracker.ietf.org/doc/html/rfc8461' target='_blank'>MTA-STS (RFC 8461)</a> &middot; <a href='https://datatracker.ietf.org/doc/html/rfc8460' target='_blank'>TLS-RPT (RFC 8460)</a></p>")
-            $null = $sectionHtml.AppendLine("</div>")
+            # Don't continue — let the DNS per-domain table render below
         }
 
         # ----------------------------------------------------------
