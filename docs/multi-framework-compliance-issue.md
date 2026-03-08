@@ -25,12 +25,18 @@ Add cross-framework compliance mapping so each security config finding shows whi
 
 | Tool | Frameworks | Multi-Framework Approach |
 |------|-----------|------------------------|
-| **Maester** | CIS Benchmarks, CISA SCuBA, MITRE ATT&CK (via EIDSCA) | Per-test tags with framework prefix (MS.*, EIDSCA.*) |
-| **Prowler** | 39 frameworks (CIS, NIST 800-53, NIST CSF, ISO 27001, PCI-DSS, HIPAA, SOC2, FedRAMP, GDPR, MITRE ATT&CK, etc.) | Each check tagged with multiple framework IDs; compliance dashboard per framework |
-| **CISA ScubaGear** | CISA SCuBA baselines only | Single-framework, no cross-mapping |
-| **Monkey365** | CIS Azure/M365 (160+ checks), plans for NIST/HIPAA/PCI | JSON rule files with compliance tags |
-| **Microsoft Compliance Manager** | 360+ regulatory templates (NIST, ISO, CMMC, FedRAMP, HIPAA, PCI, GDPR, AI regs) | Per-assessment template approach; improvement actions shared across assessments |
-| **Microsoft Secure Score** | Implicitly maps to NIST CSF, CIS, ISO 27001, NIS2 | Single score with recommendations; no explicit multi-framework view |
+| **Prowler** | 39 frameworks (CIS, NIST 800-53, NIST CSF, ISO 27001, PCI-DSS, HIPAA, SOC2, FedRAMP, GDPR, MITRE ATT&CK, etc.) | **Best-in-class:** Each check tagged with multiple framework IDs via JSON compliance files; findings carry a `compliance` dict; per-framework dashboards. Custom framework JSON files supported. |
+| **Maester** | CIS Benchmarks, CISA SCuBA, MITRE ATT&CK (via EIDSCA) | Pester test tags per framework (MS.*, EIDSCA.*, CIS.*). One test = one framework source; no cross-framework on single test. |
+| **CISA ScubaGear** | CISA SCuBA baselines + NIST 800-53 Rev 5 (via separate CSV mapping) | Separate `scuba-to-nist-sp-800-53-r5-fedramp-high.csv` mapping file. Community fork added CIS Controls v8. |
+| **Microsoft Compliance Manager** | 360+ regulatory templates (NIST, ISO, CMMC, FedRAMP, HIPAA, PCI, GDPR, AI regs) | **Common control mapping** — a single improvement action satisfies requirements across multiple assessments simultaneously. |
+| **CISO Assistant** (OSS GRC) | 100+ frameworks (ISO, NIST, SOC 2, CIS, PCI, NIS2, DORA, CMMC, Essential Eight, SCF) | YAML framework libraries with NIST OLIR-standard crosswalks. Python mapping tool generates cross-reference Excel. |
+| **Monkey365** | CIS Azure/M365 (160+ checks), plans for NIST/HIPAA/PCI | JSON rule files. Single-framework (CIS) focus today. |
+| **Microsoft Secure Score** | Implicitly maps to NIST CSF, CIS, ISO 27001, NIS2 | Scoring system, not a compliance matrix. No per-recommendation framework tagging. |
+| **M365 DSC** | Per-blueprint (e.g., ASD Essential Eight) | Configuration-as-code drift detection. One blueprint = one standard, no cross-mapping. |
+
+#### Prowler's Architecture (the pattern to emulate)
+
+Prowler uses JSON compliance files in `prowler/compliance/{provider}/` — one file per framework. Each file has a `Requirements` array; each requirement references which Prowler checks prove it. A single check can appear in multiple framework files. The finding object carries a `compliance` dict: `{"CIS": ["1.4"], "NIST": ["AC-2"]}`. This cleanly solves the "one finding maps to N frameworks" problem.
 
 ### Key Cross-Reference Resources (Free & Public)
 
@@ -142,10 +148,26 @@ Collector → CSV (with CisControl) → Export-AssessmentReport.ps1
 
 ## References
 
-- [Secure Controls Framework (SCF)](https://securecontrolsframework.com/) — Open-source metaframework, 100+ framework mappings
-- [CIS Controls Mapping](https://www.cisecurity.org/cybersecurity-tools/mapping-compliance/mapping-and-compliance-with-the-cis-controls) — Official CIS crosswalks
-- [NIST OLIR Catalog](https://csrc.nist.gov/projects/olir/informative-reference-catalog) — Official NIST framework crosswalks
-- [DISA STIG Downloads](https://public.cyber.mil/stigs/) — Public STIG checklists
-- [Microsoft Compliance Manager Templates](https://learn.microsoft.com/en-us/purview/compliance-manager-regulations-list) — 360+ regulatory templates
-- [Prowler Compliance Frameworks](https://github.com/prowler-cloud/prowler) — 39 frameworks across AWS/Azure/M365
+### Framework Sources
+- [NIST SP 800-53 Rev 5](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final) — Full catalog in PDF, JSON, XML, YAML (OSCAL)
+- [NIST CSF 2.0](https://www.nist.gov/cyberframework) — 6 functions, 22 categories, 106 subcategories
+- [CIS M365 Foundations Benchmark](https://www.cisecurity.org/benchmark/microsoft_365) — v6.0.1, free with registration
+- [DISA STIG Downloads](https://public.cyber.mil/stigs/) — Entra ID, O365 ProPlus v3r4, Intune Desktop
+- [PCI DSS v4.0](https://www.pcisecuritystandards.org/) — Free download from PCI SSC
+- [CMMC Model](https://dodcio.defense.gov/) — Level 2 = NIST 800-171 (110 practices)
+- [HIPAA Security Rule](https://www.hhs.gov/hipaa/) — Technical safeguards §164.312
+- [ISO 27001:2022 Annex A Control List](https://hightable.io/iso-27001-annex-a-controls-list/) — 93 controls, titles publicly available
+
+### Cross-Reference Mapping Sources
+- [Secure Controls Framework (SCF)](https://securecontrolsframework.com/) — Open-source metaframework, 1,300+ controls mapped to 100+ frameworks
+- [CIS Controls Mapping](https://www.cisecurity.org/cybersecurity-tools/mapping-compliance/mapping-and-compliance-with-the-cis-controls) — Official CIS → NIST 800-53, CSF 2.0, 800-171, ISO 27001 crosswalks
+- [NIST OLIR Catalog](https://csrc.nist.gov/projects/olir/informative-reference-catalog) — Official NIST framework-to-framework crosswalks
+- [MITRE Mappings Explorer](https://center-for-threat-informed-defense.github.io/mappings-explorer/external/nist/) — 6,300+ mappings between NIST 800-53 and ATT&CK
+- [ScubaGear NIST Mapping](https://github.com/cisagov/ScubaGear) — `scuba-to-nist-sp-800-53-r5-fedramp-high.csv`
+
+### Competitor Tools
+- [Prowler](https://github.com/prowler-cloud/prowler) — 39 frameworks, best multi-framework architecture pattern
 - [Maester](https://maester.dev/) — CIS, CISA SCuBA, MITRE ATT&CK for M365
+- [CISO Assistant](https://github.com/intuitem/ciso-assistant-community) — Open-source GRC, 100+ frameworks with OLIR crosswalks
+- [Microsoft Compliance Manager](https://learn.microsoft.com/en-us/purview/compliance-manager-regulations-list) — 360+ regulatory templates
+- [Microsoft PowerSTIG](https://github.com/microsoft/PowerStig) — STIG automation for PowerShell
