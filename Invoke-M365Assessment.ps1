@@ -695,12 +695,6 @@ function Show-AssessmentHeader {
         Write-Host "        ░▒▓█  v$Version  █▓▒░" -ForegroundColor DarkGray
     }
     Write-Host ''
-    Write-Host "    Output: $OutputPath" -ForegroundColor White
-    if ($LogPath) {
-        $logBaseName = Split-Path -Leaf $LogPath
-        Write-Host "    Log:    $logBaseName" -ForegroundColor DarkGray
-    }
-    Write-Host ''
 }
 
 function Show-SectionHeader {
@@ -1017,6 +1011,7 @@ $logHeaderLines = @(
     "  Started:  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     "  Tenant:   $TenantId"
     "  Cloud:    $M365Environment"
+    "  Domain:   $($script:domainPrefix)"
 )
 $logHeaderLines += @(
     "  Sections: $($Section -join ', ')"
@@ -1212,16 +1207,26 @@ function Connect-RequiredService {
                         if (-not $script:domainPrefix -and $script:resolvedTenantDomain -match '^([^.]+)\.onmicrosoft\.(com|us)$') {
                             $script:domainPrefix = $Matches[1]
                             try {
-                                # Rename assessment folder
+                                # Rename assessment folder (updates both local and script scope)
                                 $newFolderName = "Assessment_${timestamp}_$($script:domainPrefix)"
                                 Rename-Item -Path $assessmentFolder -NewName $newFolderName -ErrorAction Stop
-                                $assessmentFolder = Join-Path -Path $OutputFolder -ChildPath $newFolderName
+                                $script:assessmentFolder = Join-Path -Path $OutputFolder -ChildPath $newFolderName
+                                $assessmentFolder = $script:assessmentFolder
+
+                                # Update log path to reflect renamed folder BEFORE renaming the file
+                                $oldLogName = Split-Path -Leaf $script:logFilePath
+                                $script:logFilePath = Join-Path -Path $assessmentFolder -ChildPath $oldLogName
 
                                 # Rename log file
                                 $newLogName = "_Assessment-Log_$($script:domainPrefix).txt"
                                 Rename-Item -Path $script:logFilePath -NewName $newLogName -ErrorAction Stop
                                 $script:logFileName = $newLogName
                                 $script:logFilePath = Join-Path -Path $assessmentFolder -ChildPath $newLogName
+
+                                # Update log header with resolved domain prefix
+                                $logContent = Get-Content -Path $script:logFilePath -Raw
+                                $logContent = $logContent -creplace '(?m)(Domain:\s*)(\r?\n)', "`${1}$($script:domainPrefix)`${2}"
+                                Set-Content -Path $script:logFilePath -Value $logContent -Encoding UTF8 -NoNewline
 
                                 Write-AssessmentLog -Level INFO -Message "Renamed output to include tenant domain: $($script:domainPrefix)" -Section $SectionName
                             }
@@ -1799,7 +1804,8 @@ foreach ($sectionName in $Section) {
 $overallEnd = Get-Date
 $overallDuration = $overallEnd - $overallStart
 
-$summaryCsvPath = Join-Path -Path $assessmentFolder -ChildPath '_Assessment-Summary.csv'
+$summarySuffix = if ($script:domainPrefix) { "_$($script:domainPrefix)" } else { '' }
+$summaryCsvPath = Join-Path -Path $assessmentFolder -ChildPath "_Assessment-Summary${summarySuffix}.csv"
 $summaryResults | Export-Csv -Path $summaryCsvPath -NoTypeInformation -Encoding UTF8
 
 # ------------------------------------------------------------------
